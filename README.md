@@ -66,5 +66,11 @@ curl -sfL https://raw.githubusercontent.com/coroot/coroot-node-agent/main/instal
   API_KEY=cxxxxxx \
   SCRAPE_INTERVAL=15s \
   sh -
-                        
+
+
+In this demo project, i just created a python flask based application to capture MELT of an application
+2nd I used Open Telemetry also to capture MELT both we can see it on Coroot UI
+
+So, basically this application I used manual instrumentaion and agent based Instumetation (Coroot Node Agent) which captures MELT and by agent, export to Coroot 
+And by Open Telemetry, I used SDK based OTEL collector which collects the application MELT.
 
