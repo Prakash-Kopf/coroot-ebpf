@@ -1,0 +1,94 @@
+from flask import Flask, request
+from prometheus_client import start_http_server, Counter, Histogram
+import time, random
+
+# OTEL
+from opentelemetry import trace
+from opentelemetry import logs
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk._logs import LoggerProvider
+from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+
+# Resource with service name
+resource = Resource.create({"service.name": "coroot-dualtrace"})
+
+trace.set_tracer_provider(TracerProvider(resource=resource))
+tracer = trace.get_tracer(__name__)
+
+logs.set_logger_provider(LoggerProvider())
+logger_provider = logs.get_logger_provider()
+
+# Exporter with API Key & OTLP HTTP endpoint
+otlp_exporter = OTLPSpanExporter(
+    traces_endpoint="http://135.13.28.200:32598/v1/traces",
+    LOGS_ENDPOINT="http://135.13.28.200:32598/v1/logs",
+    headers={"x-api-key": "x-api-key=LnSnWdU392S3uTdQZWXLJDrOMLFYqhbr"},
+    
+)
+
+# Exporter 2: Otel Collector inside Kubernetes
+otlp_exporter = OTLPSpanExporter(
+    endpoint="http://otel-collector.coroot:4318/v1/traces"
+)
+
+log_exporter = OTLPLogExporter(
+    endpoint="http://http://135.13.28.200:32598/v1/logsx-api-key=LnSnWdU392S3uTdQZWXLJDrOMLFYqhb",
+    headers={"x-api-key": "<your-api-key>"},
+)
+
+trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(otlp_exporter))
+logger_provider.add_log_record_processor(BatchLogRecordProcessor(log_exporter))
+
+otel_logger = logger_provider.get_logger("otel-logger")
+otel_logger.emit("This is a sample log message")
+
+# Metrics setup
+REQUEST_COUNT = Counter("http_requests_total", "Total HTTP Requests", ["method", "endpoint"])
+REQUEST_LATENCY = Histogram("http_request_duration_seconds", "Request latency", ["endpoint"])
+
+app = Flask(__name__)
+FlaskInstrumentor().instrument_app(app)
+
+@app.before_request
+def before_request():
+    REQUEST_COUNT.labels(method=request.method, endpoint=request.path).inc()
+
+@app.route("/")
+def index():
+    with tracer.start_as_current_span("index"):
+        time.sleep(random.uniform(0.1, 0.3))
+        return "Hello from Coroot Demo (Cloud)!"
+
+@app.route("/login")
+def login():
+    with tracer.start_as_current_span("login"):
+        time.sleep(random.uniform(0.1, 0.2))
+        return "Login Page"
+
+@app.route("/checkout")
+def checkout():
+    with tracer.start_as_current_span("checkout"):
+        time.sleep(random.uniform(0.2, 0.4))
+        return "Checkout Page"
+
+@app.route("/profile")
+def profile():
+    with tracer.start_as_current_span("profile"):
+        time.sleep(random.uniform(0.1, 0.2))
+        return "User Profile"
+
+@app.route("/search")
+def search():
+    with tracer.start_as_current_span("search"):
+        time.sleep(random.uniform(0.05, 0.15))
+        return "Search Page"
+
+if __name__ == "__main__":
+    start_http_server(8001)
+    app.run(host="0.0.0.0", port=5004)
+

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp1
+  labels:
+    app: myapp1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp1
+  template:
+    metadata:
+      labels:
+        app: myapp1
+    spec:
+      containers:
+        - name: myapp1
+          image: prakashkopf/newapp:latest
+          
+          ports:
+            - containerPort: 5001
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otel-collector.coroot.svc.cluster.local:4318"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.name=myapp"
+

@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coroot-dualtrace
+  namespace: coroot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coroot-dualtrace
+  template:
+    metadata:
+      labels:
+        app: coroot-dualtrace
+    spec:
+      containers:
+        - name: coroot-dualtrace
+          image: prakashkopf/test2:new1
+          ports:
+            - containerPort: 5004
+            - containerPort: 8001
+

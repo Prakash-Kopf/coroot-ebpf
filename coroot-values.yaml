@@ -1,0 +1,8 @@
+clickhouse:
+  replicas: 1
+  shards: 1
+
+prometheus:
+  service:
+    type: NodePort
+    nodePort: 30900

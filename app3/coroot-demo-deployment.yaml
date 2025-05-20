@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coroot-demo
+  namespace: coroot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coroot-demo
+  template:
+    metadata:
+      labels:
+        app: coroot-demo
+    spec:
+      containers:
+        - name: coroot-demo
+          image: prakashkopf/coroot-demo:latest
+          ports:
+            - containerPort: 5003
+            - containerPort: 8000
+
